@@ -41,30 +41,39 @@ fit_baltimore = homicide %>%
   filter(city_state == "Baltimore, MD") %>% 
   glm(solved ~ victim_age + victim_sex + victim_race, data = ., family = binomial())
 
-fit_baltimore %>% 
+baltimore_odds = fit_baltimore %>% 
   broom::tidy() %>% 
   mutate(OR = exp(estimate)) %>%
   select(term, log_OR = estimate, OR, p.value) %>% 
   mutate(ci.low = exp(confint(fit_baltimore))[,1],
-         ci.high = exp(confint(fit_baltimore))[,2]) %>% 
+         ci.high = exp(confint(fit_baltimore))[,2]) 
+
+baltimore_odds
+
+baltimore_odds %>% 
+  filter(term == "victim_sexMale") %>% 
+  select(term, OR, ci.low, ci.high) %>% 
   knitr::kable(digits = 3)
 ```
-The adjusted odds ratio for solving homicides comparing male victims to female victims holding age and race fixed is 0.426.
+The adjusted odds ratio for solving homicides comparing male victims to female victims holding age and race fixed is **`r baltimore_odds %>% filter(term == "victim_sexMale") %>% pull (OR)` (`r baltimore_odds %>% filter(term == "victim_sexMale") %>% pull (ci.low)`, `r baltimore_odds %>% filter(term == "victim_sexMale") %>% pull (ci.high)`)**.
 
 Now run glm for each of the cities in your dataset, and extract the adjusted odds ratio (and CI) for solving homicides comparing male victims to female victims. Do this within a “tidy” pipeline, making use of purrr::map, list columns, and unnest as necessary to create a dataframe with estimated ORs and CIs for each city.
 ```{r}
-# Fit logistic regression model
-fit = homicide %>% 
-  glm(solved ~ victim_sex, data = ., family = binomial())
+#solved_glm = function()
+  
 
-fit %>% 
-  broom::tidy() %>% 
-  mutate(OR = exp(estimate)) %>%
-  select(term, log_OR = estimate, OR, p.value) %>% 
-  knitr::kable(digits = 3)
+
+# fit %>% 
+#   broom::tidy() %>% 
+#   mutate(OR = exp(estimate)) %>%
+#   select(term, log_OR = estimate, OR, p.value) %>% 
+#   knitr::kable(digits = 3)
 
 homicide %>% distinct(city_state) %>% nrow() # 47 distinct cities in our dataset
 
+homicide %>% 
+  group_by(city_state) %>% 
+  summarize()
 
 ```
 
