@@ -7,6 +7,8 @@ output: github_document
 
 ```{r include=F}
 library(tidyverse)
+library(modelr)
+library(mgcv)
 ```
 
 # Problem 2
@@ -147,10 +149,10 @@ bwt = bwt %>%
 
 sum(is.na(bwt))
 ```
-I selected gestational weeks (gaweeks), mother's weight gain during pregnancy (wtgain) and baby’s length at birth (blength) because I expect these to be closely and more directly related to birthweight from a biological standpoint.
+I selected gestational weeks (gaweeks), mother's weight gain during pregnancy (wtgain), baby’s length at birth (blength) and number of live births prior (parity) because I expect these to be closely and more directly related to birthweight from a biological standpoint.
 
 ```{r}
-m1 = lm(bwt ~ gaweeks + wtgain + blength, data = bwt)
+m1 = lm(bwt ~ gaweeks + wtgain + blength + parity, data = bwt)
 m1
 
 m1.df = bwt %>% 
@@ -184,10 +186,38 @@ Make this comparison in terms of the cross-validated prediction error; use cross
 
 ```{r}
 m2 = lm(bwt ~ blength + gaweeks, data = bwt)
+m2
 
 m3 = lm(bwt ~ bhead*blength*babysex, data = bwt)
+m3
 ```
 
 
-Note that although we expect your model to be reasonable, model building itself is not a main idea of the course and we don’t necessarily expect your model to be “optimal”.
+```{r}
+bwt_cv = bwt %>% 
+  crossv_mc(100) %>% 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble)) %>% 
+  mutate(m1_cv = map(train, ~lm(bwt ~ gaweeks + wtgain + blength, data = .x)),
+         m2_cv = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+         m3_cv = map(train, ~lm(bwt ~ bhead*blength*babysex, data = .x))) %>% 
+  mutate(rmse_m1 = map2_dbl(m1_cv, test, ~rmse(model = .x, data = .y)),
+         rmse_m2 = map2_dbl(m2_cv, test, ~rmse(model = .x, data = .y)), 
+         rmse_m3 = map2_dbl(m3_cv, test, ~rmse(model = .x, data = .y)))
+
+bwt_cv %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + 
+  geom_violin() +
+  theme_classic()
+```
+
+The prediction accuracy in my model (m1) is slightly better than that if model 2 (likely because there is overlap in the predictors), but m3 is the best-fitting model as it has the lwoest RMSE.
 
