@@ -55,7 +55,7 @@ baltimore_odds %>%
   select(term, OR, ci.low, ci.high) %>% 
   knitr::kable(digits = 3)
 ```
-The adjusted odds ratio for solving homicides comparing male victims to female victims holding age and race fixed is **`r baltimore_odds %>% filter(term == "victim_sexMale") %>% pull (OR)` (`r baltimore_odds %>% filter(term == "victim_sexMale") %>% pull (ci.low)`, `r baltimore_odds %>% filter(term == "victim_sexMale") %>% pull (ci.high)`)**.
+The adjusted odds ratio for solving homicides comparing male victims to female victims holding age and race fixed is **`r baltimore_odds %>% filter(term == "victim_sexMale") %>% pull (OR) %>% round(3)` (`r baltimore_odds %>% filter(term == "victim_sexMale") %>% pull (ci.low) %>% round(3)`, `r baltimore_odds %>% filter(term == "victim_sexMale") %>% pull (ci.high) %>% round(3)`)**.
 
 Now run glm for each of the cities in your dataset, and extract the adjusted odds ratio (and CI) for solving homicides comparing male victims to female victims. Do this within a “tidy” pipeline, making use of purrr::map, list columns, and unnest as necessary to create a dataframe with estimated ORs and CIs for each city.
 ```{r}
@@ -133,6 +133,21 @@ wtgain: mother’s weight gain during pregnancy (pounds)
 Load and clean the data for regression analysis (i.e. convert numeric to factor where appropriate, check for missing data, etc.).
 
 Propose a regression model for birthweight. This model may be based on a hypothesized structure for the factors that underly birthweight, on a data-driven model-building process, or a combination of the two. Describe your modeling process and show a plot of model residuals against fitted values – use add_predictions and add_residuals in making this plot.
+
+```{r}
+bwt = read_csv("birthweight.csv")
+
+bwt = bwt %>% 
+  mutate(
+    babysex = factor(babysex),
+    frace = factor(frace),
+    malform = factor(malform),
+    mrace = factor(mrace)
+  )
+
+sum(is.na(bwt))
+```
+
 
 Compare your model to two others:
 
