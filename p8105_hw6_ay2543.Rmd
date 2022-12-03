@@ -59,21 +59,25 @@ The adjusted odds ratio for solving homicides comparing male victims to female v
 
 Now run glm for each of the cities in your dataset, and extract the adjusted odds ratio (and CI) for solving homicides comparing male victims to female victims. Do this within a “tidy” pipeline, making use of purrr::map, list columns, and unnest as necessary to create a dataframe with estimated ORs and CIs for each city.
 ```{r}
-#solved_glm = function()
+city_odds = homicide %>% 
+  nest(data = -city_state) %>% 
+  mutate(
+  glm = purrr::map(.x = data, ~glm(solved ~ victim_age + victim_sex + victim_race, data = .x, family = binomial())),
+  glm_tidy = purrr::map(glm, broom::tidy)
+  ) %>% 
+  unnest(cols = glm_tidy) %>% 
+  filter(term == "victim_sexMale") %>% 
+  mutate(
+      OR = exp(estimate),
+      ci.low = exp(estimate - 1.96*std.error),
+      ci.high = exp(estimate + 1.96*std.error)
+    ) %>% 
+  select(city_state, OR, ci.low, ci.high)
   
 
+city_odds %>% knitr::kable(digits = 3)
 
-# fit %>% 
-#   broom::tidy() %>% 
-#   mutate(OR = exp(estimate)) %>%
-#   select(term, log_OR = estimate, OR, p.value) %>% 
-#   knitr::kable(digits = 3)
 
-homicide %>% distinct(city_state) %>% nrow() # 47 distinct cities in our dataset
-
-homicide %>% 
-  group_by(city_state) %>% 
-  summarize()
 
 ```
 
